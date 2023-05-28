@@ -3,11 +3,13 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/artemKapitonov/soundex/internal/models"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 type Service interface {
-	Soundex(string) ([]string, error)
+	Soundex(names models.Names) []string
 }
 
 type Handler struct {
@@ -19,15 +21,33 @@ func New(service Service) *Handler {
 }
 
 func (h Handler) InitRoutes() *gin.Engine {
-	router := gin.New()
+	router := gin.Default()
 
-	router.GET("/soundex", h.soundex)
+	router.POST("/soundex", h.soundex)
 
 	return router
 }
 
 func (h *Handler) soundex(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "hello world",
+	var input models.Names
+
+	if err := c.BindJSON(&input); err != nil {
+		newErrorResponse(c, http.StatusBadRequest, "invalid input value")
+	}
+
+	var soundexes = h.service.Soundex(input)
+
+	c.JSON(http.StatusOK, models.SoundexResponse{
+		Soundexes: soundexes,
 	})
+}
+
+type ErrorResponse struct {
+	Message string `json:"message"`
+}
+
+func newErrorResponse(c *gin.Context, statusCode int, message string) {
+	logrus.Errorf(message)
+
+	c.AbortWithStatusJSON(statusCode, ErrorResponse{Message: message})
 }
