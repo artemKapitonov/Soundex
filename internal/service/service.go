@@ -88,7 +88,7 @@ func (s *Service) Soundex(names models.Names) []string {
 
 	var result []string
 
-	text := strings.Split(names.Names, ",")
+	text := strings.Split(names.Names, ", ")
 
 	for _, name := range text {
 
